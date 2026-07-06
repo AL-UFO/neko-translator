@@ -179,6 +179,11 @@ export default function Page() {
             <span className="side-text right">软萌可爱</span>
           </div>
 
+          <div className="hero-image-wrap" aria-hidden="true">
+            <img className="hero-image" src="/hero-neko.png" alt="" />
+            <span className="hero-image-mask" />
+          </div>
+
           <div className="hero-inner">
             <div className="hero-text">
               <span className="hero-label">二次元猫娘语气转换器</span>
@@ -194,13 +199,6 @@ export default function Page() {
                 开始翻译喵
                 <span className="arrow" />
               </a>
-            </div>
-            <div className="hero-visual">
-              <img
-                src="https://placekitten.com/400/500"
-                alt="猫娘"
-                className="hero-image"
-              />
             </div>
           </div>
         </section>
