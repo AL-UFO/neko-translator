@@ -399,12 +399,19 @@ export default function Page() {
               <small>Neko Translator</small>
             </div>
           </div>
-          <span className="footer-copy">
-            Neko Translator {new Date().getFullYear()}
-          </span>
+          <div className="footer-disclaimer">
+            <p>本工具仅用于语言娱乐与趣味创作，生成内容由 AI 产出，请自行判断与核实。</p>
+          </div>
           <div className="footer-links">
             <a href="#translator">翻译</a>
             <a href="#about">关于</a>
+            <a
+              href="https://github.com/AL-UFO/neko-translator"
+              target="_blank"
+              rel="noreferrer"
+            >
+              GitHub
+            </a>
           </div>
         </div>
       </footer>

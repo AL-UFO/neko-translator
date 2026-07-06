@@ -1414,11 +1414,6 @@ textarea.input:focus {
   letter-spacing: 1px;
 }
 
-.footer-copy {
-  font-size: 13px;
-  color: #ffb3c6;
-}
-
 .footer-links {
   display: flex;
   gap: 18px;
@@ -1432,6 +1427,16 @@ textarea.input:focus {
 
 .footer-links a:hover {
   color: #fff;
+}
+
+.footer-disclaimer {
+  text-align: center;
+}
+
+.footer-disclaimer p {
+  font-size: 12px;
+  color: rgba(255, 227, 236, 0.6);
+  line-height: 1.6;
 }
 
 /* ========= Animations ========= */
@@ -1571,7 +1576,28 @@ textarea.input:focus {
   .hero {
     margin: 12px -14px 0;
     border-radius: 22px;
+    min-height: auto;
     padding: 36px 0 44px;
+  }
+
+  .hero-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: 28px;
+    padding: 0 24px;
+  }
+
+  .hero-text {
+    text-align: center;
+  }
+
+  .hero-sub {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-image {
+    width: 200px;
   }
 
   .hero-title {
@@ -1580,11 +1606,6 @@ textarea.input:focus {
 
   .hero-sub {
     font-size: 13px;
-  }
-
-  .hero-image {
-    width: 150px;
-    border-radius: 16px;
   }
 
   .panel {
