@@ -1662,6 +1662,253 @@ textarea.input:focus {
   }
 }
 
+/* ========= Stats Page ========= */
+.stats-page {
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.stats-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.stats-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.stats-header h1 {
+  font-family: "ZCOOL KuaiLe", cursive;
+  font-size: 32px;
+  color: #533344;
+  margin-bottom: 8px;
+}
+
+.stats-header p {
+  color: #b87a93;
+  font-size: 14px;
+}
+
+.stats-loading,
+.stats-error {
+  text-align: center;
+  padding: 60px 0;
+  color: #7a4a5e;
+}
+
+.stats-loading .cat-ear-loader {
+  margin: 0 auto 16px;
+}
+
+/* 概览卡片 */
+.stats-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 143, 171, 0.25);
+  border-radius: 18px;
+  padding: 24px 16px;
+  text-align: center;
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.08);
+}
+
+.stat-number {
+  font-family: "ZCOOL KuaiLe", cursive;
+  font-size: 36px;
+  font-weight: 700;
+  color: #ff6b9d;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #7a4a5e;
+}
+
+/* 图表区域 */
+.stats-section {
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 143, 171, 0.25);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 6px 18px rgba(255, 107, 157, 0.08);
+}
+
+.stats-section h2 {
+  font-family: "ZCOOL KuaiLe", cursive;
+  font-size: 20px;
+  color: #533344;
+  margin-bottom: 20px;
+}
+
+.chart-empty {
+  text-align: center;
+  color: #b87a93;
+  padding: 40px 0;
+}
+
+/* 柱状图 */
+.chart-bar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  height: 200px;
+  padding-top: 20px;
+}
+
+.bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+}
+
+.bar-wrapper {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.bar-fill {
+  width: 70%;
+  min-height: 4px;
+  background: linear-gradient(to top, #ff6b9d, #ff8fab);
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  transition: height 0.5s ease;
+}
+
+.bar-value {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  font-weight: 700;
+  color: #ff6b9d;
+  white-space: nowrap;
+}
+
+.bar-label {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #7a4a5e;
+}
+
+/* 分布图 */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.distribution-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.distribution-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.distribution-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #533344;
+}
+
+.distribution-count {
+  font-weight: 700;
+  color: #ff6b9d;
+}
+
+.distribution-bar {
+  height: 12px;
+  background: rgba(255, 227, 236, 0.5);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.distribution-fill {
+  height: 100%;
+  background: linear-gradient(to right, #ff6b9d, #ff8fab);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+/* 底部 */
+.stats-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  font-size: 14px;
+}
+
+.stats-footer a {
+  color: #ff6b9d;
+  text-decoration: none;
+}
+
+.stats-footer a:hover {
+  text-decoration: underline;
+}
+
+.stats-footer span {
+  color: #b87a93;
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .stats-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-number {
+    font-size: 28px;
+  }
+
+  .stats-header h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-bar {
+    height: 150px;
+    gap: 8px;
+  }
+
+  .bar-fill {
+    width: 80%;
+  }
+}
+
 /* ========= Reduced motion ========= */
 @media (prefers-reduced-motion: reduce) {
   *,

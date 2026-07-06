@@ -154,10 +154,34 @@ export async function POST(request: NextRequest) {
   }
 
   const apiKey = process.env.MIMO_API_KEY;
+  const clientId = request.headers.get("x-client-id") || "anonymous";
+  const ip =
+    request.headers.get("cf-connecting-ip") ||
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "local";
+
+  const logRequest = async (isDemo: boolean) => {
+    try {
+      await fetch(
+        "https://neko-stats-worker.neko-translator-ufo.workers.dev/api/log",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ mode, level, isDemo, clientId, ip }),
+        },
+      );
+    } catch (error) {
+      console.error("Failed to log request:", error);
+    }
+  };
 
   if (!apiKey) {
+    const result = demoResult(text, mode);
+
+    await logRequest(true);
+
     return NextResponse.json({
-      result: demoResult(text, mode),
+      result,
       model: "本地演示",
       demo: true,
     });
@@ -173,6 +197,8 @@ export async function POST(request: NextRequest) {
         { status: 502 },
       );
     }
+
+    await logRequest(false);
 
     return NextResponse.json({
       result,

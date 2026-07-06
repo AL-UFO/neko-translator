@@ -6,6 +6,16 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-07-01",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "routes": [
+    {
+      "pattern": "uuufo-exploration.top",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.uuufo-exploration.top",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": ".open-next/assets",
     "binding": "ASSETS"
@@ -14,6 +24,13 @@
     {
       "binding": "WORKER_SELF_REFERENCE",
       "service": "neko-translator"
+    }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "neko-stats",
+      "database_id": "fa09031d-f05a-4ad3-9816-821b5ad7eeeb"
     }
   ]
 }

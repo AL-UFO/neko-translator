@@ -82,6 +82,23 @@ const levelMap: Record<ReplyLevel, string> = {
   long: "长回复",
 };
 
+const CLIENT_ID_KEY = "neko-translator-client-id";
+
+function getClientId() {
+  try {
+    let clientId = window.localStorage.getItem(CLIENT_ID_KEY);
+    if (!clientId) {
+      clientId =
+        globalThis.crypto?.randomUUID?.() ||
+        `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      window.localStorage.setItem(CLIENT_ID_KEY, clientId);
+    }
+    return clientId;
+  } catch {
+    return "anonymous";
+  }
+}
+
 export default function Page() {
   const [text, setText] = useState("");
   const [mode, setMode] = useState<CatgirlMode>("soft");
@@ -113,7 +130,10 @@ export default function Page() {
     try {
       const response = await fetch("/api/translate", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-client-id": getClientId(),
+        },
         body: JSON.stringify({ text: text.trim(), mode, level }),
       });
       const data = await response.json();

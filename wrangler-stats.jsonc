@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "neko-stats-worker",
+  "main": "workers/stats-worker.js",
+  "compatibility_date": "2026-07-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "neko-stats",
+      "database_id": "fa09031d-f05a-4ad3-9816-821b5ad7eeeb"
+    }
+  ]
+}
