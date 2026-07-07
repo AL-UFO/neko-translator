@@ -85,15 +85,17 @@ cd neko-translator
 npm install
 ```
 
-### 3. 配置 API Key
+### 3. 配置环境变量
 
-创建 `.env.local` 文件，填入你的 MiMo 密钥：
+创建 `.env.local` 文件：
 
 ```
 MIMO_API_KEY=tp-你的密钥
+STATS_WRITE_TOKEN=本地开发用的随机字符串
 ```
 
-> 密钥从 [MiMo Token Plan](https://platform.xiaomimimo.com/#/console/plan-manage) 获取，格式为 `tp-xxxxx`。
+> MiMo 密钥从 [MiMo Token Plan](https://platform.xiaomimimo.com/#/console/plan-manage) 获取，格式为 `tp-xxxxx`。
+> `STATS_WRITE_TOKEN` 是统计写入接口的密钥，本地开发可以随意填写。
 
 ### 4. 启动开发服务器
 
@@ -111,12 +113,21 @@ npx next dev
 # 登录 Cloudflare
 npx wrangler login
 
-# 设置密钥
+# 设置主应用密钥
 npx wrangler secret put MIMO_API_KEY
 
-# 构建并部署
+# 设置统计写入密钥（主应用和 stats worker 都需要）
+npx wrangler secret put STATS_WRITE_TOKEN
+npx wrangler secret put STATS_WRITE_TOKEN -c wrangler-stats.jsonc
+
+# 构建并部署主应用
 npm run deploy
+
+# 部署统计 Worker
+npx wrangler deploy --config wrangler-stats.jsonc
 ```
+
+> `STATS_WRITE_TOKEN` 是一个随机长字符串，用于保护统计写入接口。两个 Worker 必须使用同一个 token。
 
 部署完成后会得到一个 `*.workers.dev` 的地址，任何人都能访问。
 
@@ -127,16 +138,22 @@ npm run deploy
 ```
 neko-translator/
 ├── app/
-│   ├── api/translate/route.ts   # 后端 API（调用 MiMo 模型）
+│   ├── api/
+│   │   ├── translate/route.ts   # 后端 API（调用 MiMo 模型）
+│   │   └── stats/route.ts       # 统计 API（转发到 stats worker）
 │   ├── page.tsx                 # 前端页面
+│   ├── stats/page.tsx           # 统计页面
 │   ├── layout.tsx               # 布局
 │   └── globals.css              # 样式
 ├── lib/
 │   └── prompt.ts                # 提示词（猫娘语气规则）
+├── workers/
+│   └── stats-worker.js          # 统计 Worker（D1 数据库操作）
 ├── .env.example                 # 环境变量模板
 ├── next.config.ts               # Next.js 配置
 ├── open-next.config.ts          # OpenNext 部署配置
-├── wrangler.jsonc               # Cloudflare Workers 配置
+├── wrangler.jsonc               # 主应用 Cloudflare 配置
+├── wrangler-stats.jsonc         # 统计 Worker Cloudflare 配置
 └── package.json
 ```
 

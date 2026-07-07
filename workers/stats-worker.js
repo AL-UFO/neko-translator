@@ -2,25 +2,50 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // CORS headers
-    const corsHeaders = {
+    // CORS headers - stats page needs to read from browser
+    const statsCorsHeaders = {
       "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
     };
 
+    // Log endpoint - no browser CORS needed, secured by token
+    const logCorsHeaders = {
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, x-stats-token",
+    };
+
     if (request.method === "OPTIONS") {
-      return new Response(null, { headers: corsHeaders });
+      const headers = url.pathname === "/api/log" ? logCorsHeaders : statsCorsHeaders;
+      return new Response(null, { headers });
     }
 
     // Log translation request
     if (url.pathname === "/api/log" && request.method === "POST") {
+      // Token validation
+      const expectedToken = env.STATS_WRITE_TOKEN;
+      const providedToken = request.headers.get("x-stats-token");
+
+      if (!expectedToken) {
+        return Response.json(
+          { error: "Stats write token not configured" },
+          { status: 503, headers: logCorsHeaders },
+        );
+      }
+
+      if (providedToken !== expectedToken) {
+        return Response.json(
+          { error: "Unauthorized" },
+          { status: 401, headers: logCorsHeaders },
+        );
+      }
+
       const db = env.DB;
 
       if (!db) {
         return Response.json(
           { error: "Database not available" },
-          { status: 503, headers: corsHeaders },
+          { status: 503, headers: logCorsHeaders },
         );
       }
 
@@ -28,22 +53,38 @@ export default {
         const body = await request.json();
         const { mode, level, isDemo, clientId, ip } = body;
 
+        // Field validation
+        const validModes = new Set(["soft", "tsundere", "cool", "energetic"]);
+        const validLevels = new Set(["short", "medium", "long"]);
+
+        const safeMode = validModes.has(mode) ? mode : "soft";
+        const safeLevel = validLevels.has(level) ? level : "medium";
+        const safeIsDemo = typeof isDemo === "boolean" ? isDemo : true;
+        const safeClientId =
+          typeof clientId === "string" && clientId.length > 0 && clientId.length <= 100
+            ? clientId
+            : "anonymous";
+        const safeIp =
+          typeof ip === "string" && ip.length <= 64
+            ? ip
+            : "unknown";
+
         await db
           .prepare(
             "INSERT INTO translate_logs (mode, level, is_demo, client_id, ip) VALUES (?, ?, ?, ?, ?)",
           )
-          .bind(mode, level, isDemo ? 1 : 0, clientId, ip)
+          .bind(safeMode, safeLevel, safeIsDemo ? 1 : 0, safeClientId, safeIp)
           .run();
 
         return Response.json(
           { success: true },
-          { headers: corsHeaders },
+          { headers: logCorsHeaders },
         );
       } catch (error) {
         console.error("Log error:", error);
         return Response.json(
           { error: "Failed to log request" },
-          { status: 500, headers: corsHeaders },
+          { status: 500, headers: logCorsHeaders },
         );
       }
     }
@@ -55,7 +96,7 @@ export default {
       if (!db) {
         return Response.json(
           { error: "Database not available" },
-          { status: 503, headers: corsHeaders },
+          { status: 503, headers: statsCorsHeaders },
         );
       }
 
@@ -117,20 +158,20 @@ export default {
             demoStats: demoStats?.results || [],
             last7Days: last7Days?.results || [],
           },
-          { headers: corsHeaders },
+          { headers: statsCorsHeaders },
         );
       } catch (error) {
         console.error("Stats query error:", error);
         return Response.json(
           { error: "Failed to fetch stats" },
-          { status: 500, headers: corsHeaders },
+          { status: 500, headers: statsCorsHeaders },
         );
       }
     }
 
     return Response.json(
       { error: "Not found" },
-      { status: 404, headers: corsHeaders },
+      { status: 404, headers: statsCorsHeaders },
     );
   },
 };

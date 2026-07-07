@@ -583,8 +583,8 @@ a {
 }
 
 .hero-text {
-  flex: 0 1 34%;
-  max-width: 420px;
+  flex: 0 1 40%;
+  max-width: 500px;
   position: relative;
   z-index: 4;
 }
@@ -619,6 +619,7 @@ a {
   color: transparent;
   padding-right: 4px;
   margin-right: -4px;
+  white-space: nowrap;
 }
 
 .hero-sub {
