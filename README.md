@@ -2,13 +2,15 @@
 
 > 把平平无奇的中文，变成软萌可爱的猫娘语气。
 
-在线体验：https://neko-translator.neko-translator-ufo.workers.dev
+在线体验：https://uuufo-exploration.top
 
 ---
 
 ## 这是什么？
 
-一个让普通中文变得软萌可爱的趣味工具。
+一个让普通中文变得软萌可爱的趣味工具，包含两个功能：
+
+### 猫娘翻译器
 
 输入一句话，选择你喜欢的猫娘性格，点击翻译，就能得到一段猫娘语气的改写。不是回答问题，而是把你的话用猫娘的方式重新说一遍。
 
@@ -24,29 +26,17 @@
 今天是疯狂星期四喵，有没有好心人愿意请本喵吃个饭呀，人家真的好想吃炸鸡喵~
 ```
 
-输入：
-```
-这个东西也太离谱了吧
-```
+### 塔菲聊天
 
-输出（傲娇猫娘）：
-```
-哼，这个东西也太离谱了吧喵！才不是本喵在意呢……但是真的很离谱好不好！
-```
+和永雏塔菲（虚拟主播）进行多轮对话，taffy 会用她独有的风格和你聊天。
 
-输入：
-```
-今天好累啊，不想上班
-```
-
-输出（高冷猫娘）：
-```
-今天好累……不想上班。嗯，知道了。别勉强自己，休息一下也无妨。……喵。
-```
+访问：https://uuufo-exploration.top/taffy-chat
 
 ---
 
 ## 功能
+
+### 猫娘翻译器
 
 - **四种猫娘性格**：软萌、傲娇、高冷、元气，总有一款适合你
 - **三档回复长度**：短回复（一句话）、中回复（两三句）、长回复（一段话）
@@ -54,6 +44,19 @@
 - **复制结果**：一键复制，发给朋友
 - **实时字数统计**：最多 300 字输入
 - **演示模式**：没有 API Key 也能体验界面交互
+
+### 塔菲聊天
+
+- **多轮上下文对话**：记住之前的聊天内容
+- **塔菲人格**：基于 ace-taffy-skill 的人格资料
+- **安全内容检测**：自动过滤危险内容
+
+### 数据统计
+
+- **猫娘翻译器统计**：总翻译次数、今日翻译、性格分布、长度分布
+- **塔菲聊天统计**：总消息数、今日消息、独立用户
+- **7 天趋势图**：可视化数据变化
+- 访问：https://uuufo-exploration.top/stats
 
 ---
 
@@ -67,6 +70,7 @@
 | 字体 | ZCOOL KuaiLe + HarmonyOS Sans SC |
 | AI 模型 | Xiaomi MiMo-V2.5-Pro |
 | 部署 | Cloudflare Workers |
+| 数据库 | Cloudflare D1 |
 
 ---
 
@@ -129,8 +133,6 @@ npx wrangler deploy --config wrangler-stats.jsonc
 
 > `STATS_WRITE_TOKEN` 是一个随机长字符串，用于保护统计写入接口。两个 Worker 必须使用同一个 token。
 
-部署完成后会得到一个 `*.workers.dev` 的地址，任何人都能访问。
-
 ---
 
 ## 项目结构
@@ -139,22 +141,26 @@ npx wrangler deploy --config wrangler-stats.jsonc
 neko-translator/
 ├── app/
 │   ├── api/
-│   │   ├── translate/route.ts   # 后端 API（调用 MiMo 模型）
-│   │   └── stats/route.ts       # 统计 API（转发到 stats worker）
-│   ├── page.tsx                 # 前端页面
-│   ├── stats/page.tsx           # 统计页面
-│   ├── layout.tsx               # 布局
-│   └── globals.css              # 样式
+│   │   ├── translate/route.ts     # 猫娘翻译 API
+│   │   ├── taffy-chat/route.ts    # 塔菲聊天 API
+│   │   └── stats/route.ts         # 统计 API
+│   ├── page.tsx                   # 猫娘翻译器页面
+│   ├── taffy-chat/page.tsx        # 塔菲聊天页面
+│   ├── stats/page.tsx             # 统计页面
+│   ├── layout.tsx
+│   └── globals.css
 ├── lib/
-│   └── prompt.ts                # 提示词（猫娘语气规则）
+│   ├── prompt.ts                  # 猫娘提示词
+│   ├── safety.ts                  # 公共安全检测
+│   └── taffy/
+│       ├── prompt.ts              # 塔菲提示词
+│       ├── response.ts            # 塔菲拒绝话术
+│       └── source.ts              # 上游来源信息
+├── taffy-chat/                    # ace-taffy-skill 人格资料
 ├── workers/
-│   └── stats-worker.js          # 统计 Worker（D1 数据库操作）
-├── .env.example                 # 环境变量模板
-├── next.config.ts               # Next.js 配置
-├── open-next.config.ts          # OpenNext 部署配置
-├── wrangler.jsonc               # 主应用 Cloudflare 配置
-├── wrangler-stats.jsonc         # 统计 Worker Cloudflare 配置
-└── package.json
+│   └── stats-worker.js            # 统计 Worker（D1 操作）
+├── wrangler.jsonc                 # 主应用配置
+└── wrangler-stats.jsonc           # 统计 Worker 配置
 ```
 
 ---
@@ -162,6 +168,8 @@ neko-translator/
 ## API
 
 ### POST /api/translate
+
+猫娘翻译接口。
 
 ```json
 {
@@ -177,18 +185,29 @@ neko-translator/
 | `mode` | string | `soft`（软萌）、`tsundere`（傲娇）、`cool`（高冷）、`energetic`（元气） |
 | `level` | string | `short`（短）、`medium`（中）、`long`（长） |
 
-返回：
+### POST /api/taffy-chat
+
+塔菲聊天接口。
 
 ```json
 {
-  "result": "本喵今天也好累喵，尾巴都快垂下来了……",
-  "model": "mimo-v2.5-pro",
-  "demo": false
+  "message": "你好呀",
+  "history": []
 }
 ```
+
+| 参数 | 类型 | 说明 |
+|---|---|---|
+| `message` | string | 用户消息，最多 500 字 |
+| `history` | array | 对话历史，最多 20 条 |
 
 ---
 
 ## 许可证
 
 MIT License
+
+## 致谢
+
+- [ace-taffy-skill](https://github.com/ly-xxx/ace-taffy-skill) — 永雏塔菲人格资料，MIT 许可证
+- [MiMo](https://mimo.xiaomi.com) — AI 模型

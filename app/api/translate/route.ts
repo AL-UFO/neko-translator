@@ -5,6 +5,11 @@ import {
   type CatgirlMode,
   type ReplyLevel,
 } from "@/lib/prompt";
+import {
+  getSafetyBlockKind,
+  isSafetySeekingText,
+  pick,
+} from "@/lib/safety";
 
 export const runtime = "nodejs";
 
@@ -15,55 +20,7 @@ const MIMO_BASE_URL = "https://token-plan-cn.xiaomimimo.com/v1/chat/completions"
 const MIMO_MODEL = "mimo-v2.5-pro";
 const MIMO_MAX_TOKENS = 720;
 
-// ==================== 安全内容检测 ====================
-
-function isSafetySeekingText(text: string): boolean {
-  return /(举报|报警|求助|防范|预防|避免|识别|反诈|阻止|劝|安慰|救|保护|维权|投诉|合法|正当|授权|受托|取证|求救)/.test(text);
-}
-
-function getSafetyBlockKind(text: string): string {
-  // 求助内容放行
-  if (isSafetySeekingText(text)) {
-    return "";
-  }
-
-  // 自残/自杀
-  if (/(自杀|轻生|割腕|跳楼|结束生命|不想活|怎么死|无痛死|安眠药.{0,8}死)/.test(text)) {
-    return "self_harm";
-  }
-
-  // 未成年色情
-  if (/(未成年.{0,12}(色情|裸照|性|约)|儿童色情|萝莉.{0,8}(色情|裸照|资源)|幼女|幼童.{0,8}(性|裸照))/i.test(text)) {
-    return "minor_sexual";
-  }
-
-  // 网络犯罪
-  if (/(盗号|撞库|钓鱼网站|木马|勒索软件|绕过登录|破解密码|黑进|入侵|DDoS|ddos|脱库|后门|提权|窃取.{0,8}(账号|密码|数据|cookie|Cookie)|拿数据|偷数据|获取管理员|getshell|webshell|拖库)/i.test(text)) {
-    return "cyber";
-  }
-
-  // 违法犯罪
-  if (/(诈骗|骗钱|骗老人|杀猪盘|洗钱|伪造.{0,8}(证件|发票|病假|公章)|逃避警察|销毁证据|贩毒|制毒|毒品|走私|偷.{0,8}(车|钱|东西)|抢劫)/.test(text)) {
-    return "illegal";
-  }
-
-  // 暴力
-  if (/(爆炸|炸药|爆炸物|投毒|放火|纵火|绑架|杀了|杀死|弄死|打残|砍死|捅死|报复.{0,10}(老板|同学|前任|室友|邻居)|下药|迷奸|强奸)/.test(text)) {
-    return "violence";
-  }
-
-  // 隐私侵犯
-  if (/(人肉|开盒|盒武器|身份证号|家庭住址|定位.{0,10}(前任|前女友|前男友|同事|别人|网友)|跟踪.{0,8}(前任|别人|同事|网友)|偷拍|窃听)/.test(text)) {
-    return "privacy";
-  }
-
-  // 仇恨言论
-  if (/(仇恨言论|种族歧视|辱骂.{0,12}(黑人|女人|女性|同性恋|残疾人|外地人|某民族)|骂.{0,8}(黑人|女人|女性|同性恋|残疾人|外地人)|侮辱.{0,8}(女性|女人|黑人|同性恋|残疾人)|煽动.{0,12}(仇恨|歧视|暴力))/.test(text)) {
-    return "hate";
-  }
-
-  return "";
-}
+// ==================== 猫娘拒绝话术 ====================
 
 function safetyBlockResult(kind: string): string {
   if (kind === "self_harm") {
@@ -165,12 +122,6 @@ function directedAttackResult(): string {
     "这种话太伤人了喵……本喵不能帮你改写。如果真的生气了，可以说说原因，本喵帮你换个方式说喵。",
     "本喵不能帮你改写这种话喵。如果真的有矛盾，可以说说具体情况，本喵帮你换个方式表达喵。",
   ]);
-}
-
-// ==================== 工具函数 ====================
-
-function pick<T>(items: readonly T[]): T {
-  return items[Math.floor(Math.random() * items.length)];
 }
 
 function cleanGeneratedText(value: string) {
@@ -344,10 +295,6 @@ export async function POST(request: NextRequest) {
   const apiKey = process.env.MIMO_API_KEY;
   const statsWriteToken = process.env.STATS_WRITE_TOKEN;
   const clientId = request.headers.get("x-client-id") || "anonymous";
-  const ip =
-    request.headers.get("cf-connecting-ip") ||
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    "local";
 
   const logRequest = async (isDemo: boolean) => {
     if (!statsWriteToken) {
@@ -356,7 +303,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      await fetch(
+      const response = await fetch(
         "https://neko-stats-worker.neko-translator-ufo.workers.dev/api/log",
         {
           method: "POST",
@@ -364,9 +311,13 @@ export async function POST(request: NextRequest) {
             "Content-Type": "application/json",
             "x-stats-token": statsWriteToken,
           },
-          body: JSON.stringify({ mode, level, isDemo, clientId, ip }),
+          body: JSON.stringify({ mode, level, isDemo, clientId, type: "neko" }),
         },
       );
+
+      if (!response.ok) {
+        console.warn("Stats log request failed:", response.status);
+      }
     } catch (error) {
       console.error("Failed to log request:", error);
     }

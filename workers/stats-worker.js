@@ -51,7 +51,7 @@ export default {
 
       try {
         const body = await request.json();
-        const { mode, level, isDemo, clientId, ip } = body;
+        const { mode, level, isDemo, clientId, ip, type } = body;
 
         // Field validation
         const validModes = new Set(["soft", "tsundere", "cool", "energetic"]);
@@ -68,12 +68,13 @@ export default {
           typeof ip === "string" && ip.length <= 64
             ? ip
             : "unknown";
+        const safeType = type === "taffy" ? "taffy" : "neko";
 
         await db
           .prepare(
-            "INSERT INTO translate_logs (mode, level, is_demo, client_id, ip) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO translate_logs (mode, level, is_demo, client_id, ip, type) VALUES (?, ?, ?, ?, ?, ?)",
           )
-          .bind(safeMode, safeLevel, safeIsDemo ? 1 : 0, safeClientId, safeIp)
+          .bind(safeMode, safeLevel, safeIsDemo ? 1 : 0, safeClientId, safeIp, safeType)
           .run();
 
         return Response.json(
@@ -101,55 +102,46 @@ export default {
       }
 
       try {
-        // Total requests
-        const total = await db
-          .prepare("SELECT COUNT(*) as count FROM translate_logs")
-          .first();
+        // Helper to query stats for a given type
+        async function queryStats(logType) {
+          const where = "WHERE type = ?";
 
-        // Today's requests
-        const today = await db
-          .prepare(
-            "SELECT COUNT(*) as count FROM translate_logs WHERE date(created_at) = date('now')",
-          )
-          .first();
+          const total = await db
+            .prepare(`SELECT COUNT(*) as count FROM translate_logs ${where}`)
+            .bind(logType)
+            .first();
 
-        // Requests by mode
-        const byMode = await db
-          .prepare(
-            "SELECT mode, COUNT(*) as count FROM translate_logs GROUP BY mode ORDER BY count DESC",
-          )
-          .all();
+          const today = await db
+            .prepare(`SELECT COUNT(*) as count FROM translate_logs ${where} AND date(created_at) = date('now')`)
+            .bind(logType)
+            .first();
 
-        // Requests by level
-        const byLevel = await db
-          .prepare(
-            "SELECT level, COUNT(*) as count FROM translate_logs GROUP BY level ORDER BY count DESC",
-          )
-          .all();
+          const byMode = await db
+            .prepare(`SELECT mode, COUNT(*) as count FROM translate_logs ${where} GROUP BY mode ORDER BY count DESC`)
+            .bind(logType)
+            .all();
 
-        // Demo vs real requests
-        const demoStats = await db
-          .prepare(
-            "SELECT is_demo, COUNT(*) as count FROM translate_logs GROUP BY is_demo",
-          )
-          .all();
+          const byLevel = await db
+            .prepare(`SELECT level, COUNT(*) as count FROM translate_logs ${where} GROUP BY level ORDER BY count DESC`)
+            .bind(logType)
+            .all();
 
-        // Unique clients (by client_id)
-        const uniqueClients = await db
-          .prepare(
-            "SELECT COUNT(DISTINCT client_id) as count FROM translate_logs",
-          )
-          .first();
+          const demoStats = await db
+            .prepare(`SELECT is_demo, COUNT(*) as count FROM translate_logs ${where} GROUP BY is_demo`)
+            .bind(logType)
+            .all();
 
-        // Requests in last 7 days
-        const last7Days = await db
-          .prepare(
-            "SELECT date(created_at) as date, COUNT(*) as count FROM translate_logs WHERE created_at >= datetime('now', '-7 days') GROUP BY date(created_at) ORDER BY date DESC",
-          )
-          .all();
+          const uniqueClients = await db
+            .prepare(`SELECT COUNT(DISTINCT client_id) as count FROM translate_logs ${where}`)
+            .bind(logType)
+            .first();
 
-        return Response.json(
-          {
+          const last7Days = await db
+            .prepare(`SELECT date(created_at) as date, COUNT(*) as count FROM translate_logs ${where} AND created_at >= datetime('now', '-7 days') GROUP BY date(created_at) ORDER BY date DESC`)
+            .bind(logType)
+            .all();
+
+          return {
             total: total?.count || 0,
             today: today?.count || 0,
             uniqueClients: uniqueClients?.count || 0,
@@ -157,7 +149,14 @@ export default {
             byLevel: byLevel?.results || [],
             demoStats: demoStats?.results || [],
             last7Days: last7Days?.results || [],
-          },
+          };
+        }
+
+        const neko = await queryStats("neko");
+        const taffy = await queryStats("taffy");
+
+        return Response.json(
+          { neko, taffy },
           { headers: statsCorsHeaders },
         );
       } catch (error) {

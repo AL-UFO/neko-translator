@@ -19,13 +19,7 @@ export async function GET() {
       const errorData = await response.json().catch(() => ({}));
       console.error("Stats worker error:", response.status, errorData);
       return NextResponse.json(
-        { 
-          error: "Failed to fetch stats",
-          debug: {
-            status: response.status,
-            workerError: errorData,
-          }
-        },
+        { error: "Failed to fetch stats" },
         { status: response.status },
       );
     }
@@ -35,12 +29,7 @@ export async function GET() {
   } catch (error) {
     console.error("Stats fetch error:", error);
     return NextResponse.json(
-      { 
-        error: "Failed to connect to stats service",
-        debug: {
-          message: error instanceof Error ? error.message : String(error),
-        }
-      },
+      { error: "Failed to connect to stats service" },
       { status: 502 },
     );
   }
