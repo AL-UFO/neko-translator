@@ -110,7 +110,9 @@ export default function Page() {
   const [isDemo, setIsDemo] = useState(false);
   const [copied, setCopied] = useState(false);
   const [navHidden, setNavHidden] = useState(false);
+  const [taffyVisible, setTaffyVisible] = useState(false);
   const lastScrollY = useRef(0);
+  const taffyRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     function onScroll() {
@@ -120,6 +122,21 @@ export default function Page() {
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!taffyRef.current) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTaffyVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 },
+    );
+    observer.observe(taffyRef.current);
+    return () => observer.disconnect();
   }, []);
 
   async function translate() {
@@ -181,7 +198,7 @@ export default function Page() {
         <div className="nav-links">
           <a href="#translator">翻译</a>
           <a href="#about">关于</a>
-          <span className="nav-tag">v1.0</span>
+          <span className="nav-tag">v1.1</span>
         </div>
       </nav>
 
@@ -407,9 +424,39 @@ export default function Page() {
             ))}
           </div>
         </section>
+        {/* 5. 塔菲聊天引入 */}
+        <section className="taffy-intro" ref={taffyRef}>
+          <div className="taffy-intro-card">
+            <div className="taffy-intro-left">
+              <img
+                src="/taffy.jpg"
+                alt="永雏塔菲"
+                className="taffy-intro-avatar"
+              />
+              <div className="taffy-intro-text">
+                <h2 className="taffy-intro-title">猫娘翻译没有玩够？</h2>
+                <p className="taffy-intro-subtitle">那来试试和真正的猫娘对话吧！</p>
+                <p className="taffy-intro-desc">永雏塔菲在线 AI 对话，多轮上下文聊天</p>
+                <a href="/taffy-chat" className="taffy-intro-btn">
+                  开始对话 <span className="arrow" />
+                </a>
+              </div>
+            </div>
+            <div className="taffy-intro-preview">
+              <div className="taffy-intro-chat">
+                <div className={`taffy-intro-bubble user ${taffyVisible ? "show" : ""}`}>
+                  今天好累啊
+                </div>
+                <div className={`taffy-intro-bubble taffy ${taffyVisible ? "show" : ""}`}>
+                  雏草姬辛苦了喵……taffy 今天也肝了一整天游戏，累得尾巴都快垂下来了喵。要不要一起摸鱼休息一下？
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
-      {/* 5. 页脚 */}
+      {/* 6. 页脚 */}
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
